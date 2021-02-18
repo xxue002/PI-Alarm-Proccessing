@@ -25,9 +25,9 @@ namespace Core
             // Registers instances into container
             var builder = new ContainerBuilder();
             builder.RegisterInstance(logger).As<ILogger>().SingleInstance();
-            builder.RegisterType<CsvReader>().As<IReader>().SingleInstance();
+            //builder.RegisterType<CsvReader>().As<IReader>().SingleInstance();
             builder.RegisterType<PIConnectionManager>().As<IPIConnectionManager>().SingleInstance();
-            builder.RegisterType<HistoryBackfiller>().As<IHistoryBackfiller>().SingleInstance();
+            //builder.RegisterType<HistoryBackfiller>().As<IHistoryBackfiller>().SingleInstance();
             builder.RegisterType<HDAService>().As<IHDAService>().SingleInstance();
             _container = builder.Build();
         }

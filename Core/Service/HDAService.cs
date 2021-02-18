@@ -10,21 +10,19 @@ namespace Core.Service
     {
         private ILogger _logger;
         private IPIConnectionManager _piCM;
-        private IHistoryBackfiller _backfiller;
+        //private IHistoryBackfiller _backfiller;
         private PIServer _SitePI;
         private bool _IsConnected;
 
-        public HDAService(IPIConnectionManager piCM, ILogger logger, IHistoryBackfiller backfiller)
+        public HDAService(IPIConnectionManager piCM, ILogger logger) //IHistoryBackfiller backfiller)
         {
             _piCM = piCM;
             _logger = logger;
-            _backfiller = backfiller;
+            //_backfiller = backfiller;
         }
 
         public async Task Start()
         {
-            // Hey I'm Xiao Xue
-            _logger.Information("Hello World");
             _logger.Information("History Backfill Service started successfully");
             (_IsConnected, _SitePI) = _piCM.Connect();
             
@@ -32,8 +30,8 @@ namespace Core.Service
             if (!_IsConnected) return;
             else
             {
-                await _backfiller.automateBackfill();
-                _backfiller.logErrors();
+                //await _backfiller.automateBackfill();
+                //_backfiller.logErrors();
             }
         }
 
