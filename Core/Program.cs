@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Core.AlarmProcessor;
 using Core.Backfiller;
 using Core.ConnectionManager;
 using Core.FileReader;
@@ -28,6 +29,7 @@ namespace Core
             //builder.RegisterType<CsvReader>().As<IReader>().SingleInstance();
             builder.RegisterType<PIConnectionManager>().As<IPIConnectionManager>().SingleInstance();
             //builder.RegisterType<HistoryBackfiller>().As<IHistoryBackfiller>().SingleInstance();
+            builder.RegisterType<AlarmReader>().SingleInstance();
             builder.RegisterType<HDAService>().As<IHDAService>().SingleInstance();
             _container = builder.Build();
         }

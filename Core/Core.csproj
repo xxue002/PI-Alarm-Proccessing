@@ -95,6 +95,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AlarmProcessor\AlarmReader.cs" />
     <Compile Include="Backfiller\HistoryBackfiller.cs" />
     <Compile Include="Backfiller\IHistoryBackfiller.cs" />
     <Compile Include="ConnectionManager\IPIConnectionManager.cs" />
@@ -112,8 +113,6 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="AlarmProcessor\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

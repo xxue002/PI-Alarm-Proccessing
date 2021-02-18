@@ -1,4 +1,5 @@
-﻿using Core.Backfiller;
+﻿using Core.AlarmProcessor;
+using Core.Backfiller;
 using Core.ConnectionManager;
 using OSIsoft.AF.PI;
 using Serilog;
@@ -13,11 +14,13 @@ namespace Core.Service
         //private IHistoryBackfiller _backfiller;
         private PIServer _SitePI;
         private bool _IsConnected;
+        private AlarmReader _alarmReader;
 
-        public HDAService(IPIConnectionManager piCM, ILogger logger) //IHistoryBackfiller backfiller)
+        public HDAService(IPIConnectionManager piCM, ILogger logger, AlarmReader alarmReader) //IHistoryBackfiller backfiller)
         {
             _piCM = piCM;
             _logger = logger;
+            _alarmReader = alarmReader;
             //_backfiller = backfiller;
         }
 
@@ -32,6 +35,8 @@ namespace Core.Service
             {
                 //await _backfiller.automateBackfill();
                 //_backfiller.logErrors();
+                _alarmReader.RetrieveAlarm();
+                
             }
         }
 
