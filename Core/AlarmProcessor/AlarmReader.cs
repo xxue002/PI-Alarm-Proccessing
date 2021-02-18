@@ -28,7 +28,6 @@ namespace Core.AlarmProcessor
             string TagName = "CN.BJG.HMI0001.FLM01";
             (_IsConnected, _SitePI) = _piCM.Connect();
             PIPoint AlarmPoint = PIPoint.FindPIPoint(_SitePI, TagName);
-            AFValue AlarmValue = AlarmPoint.CurrentValue();
 
             DateTime endTime = DateTime.Now;
             DateTime startTime = endTime.AddMinutes(-10);
@@ -38,10 +37,47 @@ namespace Core.AlarmProcessor
             AFTimeRange QueryRange = new AFTimeRange(startAFTime, endAFTime);
 
             AFValues valueList = AlarmPoint.RecordedValues(QueryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
-            foreach(var item in valueList)
+
+            var filteredActiveList = valueList.Where((item) =>
             {
-                _logger.Information("Timestamp: {0}; Value: {1}", item.Timestamp, item.Value.ToString());
+                return item.Value.ToString().Contains("|ACTIVE|");
+            });
+
+            foreach (var item in filteredActiveList)
+            {
+                _logger.Information("Timestamp : {0} Value : {1}", item.Timestamp, item.Value.ToString());
             }
+            
+            var sourceList = filteredActiveList.Select((item) =>
+            {
+                return item.Value.ToString().Split('|')[0];
+            });
+
+            var messageList = filteredActiveList.Select((item) =>
+            {
+                return item.Value.ToString().Split('|')[3];
+            });
+
+            var numActive = filteredActiveList.ToList().Count;
+
+            foreach (var item in messageList)
+            {
+                _logger.Information("Message : {0}", item);
+            }
+            foreach (var item in sourceList)
+            {
+                _logger.Information("Source : {0}", item);
+            }
+            _logger.Information("Count : {0}", numActive);
+
+            //_logger.Information("Number of ACTIVE Alarms {0}", filteredList);
+
+            //foreach(var item in filteredList)
+            //{
+            //    _logger.Information("Timestamp: {0}; Value: {1}", item.Timestamp, item.Value.ToString());
+            //}
+            //_logger.Information("Number of ACTIVE Alarmrs: {0}", filteredList.ToList().Count);
+
             //_logger.Information("Timestamp: {0}; Value: {1}", AlarmValue.Timestamp, AlarmValue.Value.ToString());
 
         }
