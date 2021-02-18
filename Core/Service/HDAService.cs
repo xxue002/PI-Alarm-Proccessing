@@ -23,6 +23,8 @@ namespace Core.Service
 
         public async Task Start()
         {
+            // Hey I'm Xiao Xue
+            _logger.Information("Hello World");
             _logger.Information("History Backfill Service started successfully");
             (_IsConnected, _SitePI) = _piCM.Connect();
             
