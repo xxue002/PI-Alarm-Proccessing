@@ -44,16 +44,16 @@ namespace Core.AlarmProcessor
             var tasks = new List<Task>();
             foreach (string Tagname in _nameList)
             {
-                tasks.Add(RetrieveAlarmandUpdate(Tagname));
+                RetrieveAlarmandUpdate(Tagname);
                 //string TagName = "CN.BJG.HMI0001.FLM01";
             }
             Task.WhenAll(tasks);
         }
 
-        private Task RetrieveAlarmandUpdate(string tagname)
+        private void RetrieveAlarmandUpdate(string Tagname)
         {
 
-            PIPoint AlarmPoint = PIPoint.FindPIPoint(_SitePI, TagName);
+            PIPoint AlarmPoint = PIPoint.FindPIPoint(_SitePI, Tagname);
 
             // Get current time and start time of 10 mins ago
             DateTime endTime = DateTime.Now;
@@ -81,9 +81,9 @@ namespace Core.AlarmProcessor
             //Output source to a sourcelist from item
             var sourceList = filteredActiveList.Select((item) =>
             {
-                    // return as an AF Value
-                    //return item.Value.ToString().Split('|')[0];
-                    return new AFValue
+                // return as an AF Value
+                //return item.Value.ToString().Split('|')[0];
+                return new AFValue
                 {
                     Timestamp = item.Timestamp,
                     Value = item.Value.ToString().Split('|')[0]
@@ -155,4 +155,4 @@ namespace Core.AlarmProcessor
             //_logger.Information("Timestamp: {0}; Value: {1}", AlarmValue.Timestamp, AlarmValue.Value.ToString());
         }
     }
- 
+}
