@@ -21,86 +21,110 @@ namespace Core.FileReader
         }
 
         // show list of CSV files in the folder defined in AppSettings.Path
-        private void showUserChoicesCsv()
+
+        private string showCsv()
         {
             _logger.Information("RETRIEVING FILES FROM {0}", _path);
 
-            _fileList = Directory.GetFiles(_path,"*.csv");
+            _fileList = Directory.GetFiles(_path, "*.csv");
 
             if (_fileList.Length > 0)
             {
                 _logger.Information("LIST OF ALARM TAGS CSV FILES AVAILABLE ...");
                 for (int i = 0; i < _fileList.Length; i++)
                 {
-                    _logger.Information("     Choice {0}: {1}", i + 1, _fileList[i]);
+                    _logger.Information("File:{0}", _fileList[i]);
+                    return _fileList[i];
                 }
             }
             else
             {
                 _logger.Error("THERE ARE NO CSV FILES IN THIS LOCATION");
             }
+
+            return _fileList[0];
         }
+
+        //private void showUserChoicesCsv()
+        //{
+        //    _logger.Information("RETRIEVING FILES FROM {0}", _path);
+
+        //    _fileList = Directory.GetFiles(_path,"*.csv");
+
+        //    if (_fileList.Length > 0)
+        //    {
+        //        _logger.Information("LIST OF ALARM TAGS CSV FILES AVAILABLE ...");
+        //        for (int i = 0; i < _fileList.Length; i++)
+        //        {
+        //            _logger.Information("     Choice {0}: {1}", i + 1, _fileList[i]);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        _logger.Error("THERE ARE NO CSV FILES IN THIS LOCATION");
+        //    }
+        //}
 
         // get the name of the file selected by the user
-        private string getUserChoiceCsv()
-        {
-            string choice = "ALARM_TAGS";
-            int choiceInt;
-            
-            while (!int.TryParse(choice, out choiceInt) || choiceInt < 1 || choiceInt > _fileList.Length)
-            {
-                // keep asking for user input if input is invalid
-                // for e.g. not an integer, integer not from 1 to 6
-                Console.Write("SELECT THE CSV FILE TO READ FROM (FROM 1 TO {0}): ", _fileList.Length);
-                choice = Console.ReadLine();
-            }
+        //private string getUserChoiceCsv()
+        //{
+        //    string choice = "";
+        //    int choiceInt;
 
-            _logger.Information("CSV file selected for Alarm: {0}", _fileList[choiceInt-1]);
+        //    while (!int.TryParse(choice, out choiceInt) || choiceInt < 1 || choiceInt > _fileList.Length)
+        //    {
+        //        // keep asking for user input if input is invalid
+        //        // for e.g. not an integer, integer not from 1 to 6
+        //        Console.Write("SELECT THE CSV FILE TO READ FROM (FROM 1 TO {0}): ", _fileList.Length);
+        //        choice = Console.ReadLine();
+        //    }
 
-            return _fileList[choiceInt-1];
-        }
+        //    _logger.Information("CSV file selected for Alarm: {0}", _fileList[choiceInt-1]);
+
+        //    return _fileList[choiceInt-1];
+        //}
 
         // Read and export the list of tags from the selected CSV File
-        public IList<string> readFile()
+        //public IList<string> readFile()
+        //{
+        //    try
+        //    {
+        //        // Retrieve files in folder, if empty, terminate reader and return empty list
+        //        showCsv();
+        //        if (_fileList.Length == 0) return _csvData;
+
+        //        using var streamReader = File.OpenText(_fileList[0]);
+        //        using var csvReader = new CsvHelper.CsvReader(streamReader, CultureInfo.CurrentCulture);
+        //        csvReader.Configuration.HasHeaderRecord = true;
+
+        //        //csvReader.Configuration.ShouldSkipRecord = row => row[0].Contains("ALARM_TAGS");
+        //        csvReader.Configuration.ShouldSkipRecord = row => row[0].Contains("Alarm Tag (Input)");
+
+        //        while (csvReader.Read())
+        //        {
+        //            for (int i = 0; csvReader.TryGetField(i, out string value); i++)
+        //            {
+        //                _csvData.Add(value);
+        //                _logger.Information("value : {0}", _csvData);
+        //            }
+        //        }
+        //        csvReader.Dispose();
+        //        streamReader.Close();                
+        //    } 
+
+        public Foo readFile()
         {
-            try
+            Foo record;
+            using (var streamReader = File.OpenText(showCsv())) 
             {
-                // Retrieve files in folder, if empty, terminate reader and return empty list
-                showUserChoicesCsv();
-                if (_fileList.Length == 0) return _csvData;
-
-                using var streamReader = File.OpenText(getUserChoiceCsv());
-                using var csvReader = new CsvHelper.CsvReader(streamReader, CultureInfo.CurrentCulture);
-                csvReader.Configuration.HasHeaderRecord = true;
-
-                //csvReader.Configuration.ShouldSkipRecord = row => row[0].Contains("ALARM_TAGS");
-                csvReader.Configuration.ShouldSkipRecord = row => row[0].Contains("Alarm Tag (Input)");
-
-                while (csvReader.Read())
+                using (var csvReader = new CsvHelper.CsvReader(streamReader, CultureInfo.CurrentCulture))
                 {
-                    for (int i = 0; csvReader.TryGetField(i, out string value); i++)
-                    {
-                        _csvData.Add(value);
-                    }
+                    
+                    record = csvReader.GetRecord<Foo>();
+                    
                 }
-                csvReader.Dispose();
-                streamReader.Close();                
-            } 
-            catch (FileNotFoundException e)
-            {
-                _logger.Error("File does not exist in the program directory...");
-                _logger.Error(e.Message);
             }
-            catch (ArgumentNullException e)
-            {
-                _logger.Error("File path not found in App.config");
-                _logger.Error(e.Message);
-            }
-            catch (Exception e)
-            {
-                _logger.Error(e.Message);
-            }
-            return _csvData;
+            return record;
         }
     }
 }

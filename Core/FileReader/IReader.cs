@@ -4,7 +4,6 @@ namespace Core.FileReader
 {
     public interface IReader
     {
-        IList<string> readFile();
-
+        Foo readFile();
     }
 }
