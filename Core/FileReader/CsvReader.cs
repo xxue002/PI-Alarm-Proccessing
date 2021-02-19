@@ -44,7 +44,7 @@ namespace Core.FileReader
         // get the name of the file selected by the user
         private string getUserChoiceCsv()
         {
-            string choice = "";
+            string choice = "ALARM_TAGS";
             int choiceInt;
             
             while (!int.TryParse(choice, out choiceInt) || choiceInt < 1 || choiceInt > _fileList.Length)

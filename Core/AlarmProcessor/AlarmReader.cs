@@ -33,13 +33,13 @@ namespace Core.AlarmProcessor
         //Get Alarm String
         public void RetrieveAlarm()
         {
-
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
 
             // Retrieve list of Alarm PI Points from CSV
             _nameList = _reader.readFile();
             _totalCount = _nameList.Count;
+            _logger.Information("value : {0}", _nameList);
 
             var tasks = new List<Task>();
             foreach (string Tagname in _nameList)
@@ -101,6 +101,10 @@ namespace Core.AlarmProcessor
             string SourceTagname = "CN.BJG.FLM01.ALYS.ALARMS.SRC.TEST";
             PIPoint SourceTagPoint = PIPoint.FindPIPoint(_SitePI, SourceTagname);
             var InsertSourceData = SourceTagPoint.UpdateValues(AFsourceList, OSIsoft.AF.Data.AFUpdateOption.Insert);
+            foreach (var item in sourceList)
+            {
+                _logger.Information("Timstamp :{0}, Message : {1}", item.Timestamp, item.Value);
+            }
 
             //Output message to a messagelist from item
             var messageList = filteredActiveList.Select((item) =>
@@ -124,7 +128,10 @@ namespace Core.AlarmProcessor
             string MSGTagname = "CN.BJG.FLM01.ALYS.ALARMS.MSG.TEST";
             PIPoint MSGTagPoint = PIPoint.FindPIPoint(_SitePI, MSGTagname);
             var InsertMessageData = MSGTagPoint.UpdateValues(AFMessageList, OSIsoft.AF.Data.AFUpdateOption.Insert);
-
+            foreach (var item in messageList)
+            {
+                _logger.Information("Timstamp :{0}, Message : {1}", item.Timestamp, item.Value);
+            }
             //Find the Count tag and update values into the tag
             string CountTagname = "CN.BJG.FLM01.ALYS.ALARMS.COUNT.TEST";
             PIPoint CountTagPoint = PIPoint.FindPIPoint(_SitePI, CountTagname);
@@ -132,27 +139,8 @@ namespace Core.AlarmProcessor
             var timeNow = DateTime.Now;
             AFValue numActive = new AFValue(alarmCount, timeNow);
             CountTagPoint.UpdateValue(numActive, OSIsoft.AF.Data.AFUpdateOption.Insert);
-
-
-            foreach (var item in messageList)
-            {
-                _logger.Information("Timstamp :{0}, Message : {1}", item.Timestamp, item.Value);
-            }
-            foreach (var item in sourceList)
-            {
-                _logger.Information("Timstamp :{0}, Message : {1}", item.Timestamp, item.Value);
-            }
             _logger.Information("Timestamp :{0}, Count : {1}", timeNow, numActive);
 
-            //_logger.Information("Number of ACTIVE Alarms {0}", filteredList);
-
-            //foreach(var item in filteredList)
-            //{
-            //    _logger.Information("Timestamp: {0}; Value: {1}", item.Timestamp, item.Value.ToString());
-            //}
-            //_logger.Information("Number of ACTIVE Alarmrs: {0}", filteredList.ToList().Count);
-
-            //_logger.Information("Timestamp: {0}; Value: {1}", AlarmValue.Timestamp, AlarmValue.Value.ToString());
         }
     }
 }
