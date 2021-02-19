@@ -13,6 +13,7 @@ namespace Core.FileReader
         private string _path = AppSettings.Path;
         private string[] _fileList;
         private IList<string> _csvData = new List<string>();
+        private object row;
 
         public CsvReader(ILogger logger)
         {
@@ -28,7 +29,7 @@ namespace Core.FileReader
 
             if (_fileList.Length > 0)
             {
-                _logger.Information("LIST OF HDA TAGS CSV FILES AVAILABLE ...");
+                _logger.Information("LIST OF ALARM TAGS CSV FILES AVAILABLE ...");
                 for (int i = 0; i < _fileList.Length; i++)
                 {
                     _logger.Information("     Choice {0}: {1}", i + 1, _fileList[i]);
@@ -54,7 +55,7 @@ namespace Core.FileReader
                 choice = Console.ReadLine();
             }
 
-            _logger.Information("CSV file selected for backfill: {0}", _fileList[choiceInt-1]);
+            _logger.Information("CSV file selected for Alarm: {0}", _fileList[choiceInt-1]);
 
             return _fileList[choiceInt-1];
         }
@@ -71,8 +72,10 @@ namespace Core.FileReader
                 using var streamReader = File.OpenText(getUserChoiceCsv());
                 using var csvReader = new CsvHelper.CsvReader(streamReader, CultureInfo.CurrentCulture);
                 csvReader.Configuration.HasHeaderRecord = true;
-                csvReader.Configuration.ShouldSkipRecord = row => row[0].Contains("HDA_TAGS");
-                
+
+                //csvReader.Configuration.ShouldSkipRecord = row => row[0].Contains("ALARM_TAGS");
+                csvReader.Configuration.ShouldSkipRecord = row => row[0].Contains("Alarm Tag (Input)");
+
                 while (csvReader.Read())
                 {
                     for (int i = 0; csvReader.TryGetField(i, out string value); i++)

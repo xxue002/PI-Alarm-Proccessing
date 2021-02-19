@@ -1,4 +1,5 @@
 ﻿using Core.ConnectionManager;
+using Core.FileReader;
 using OSIsoft.AF.Asset;
 using OSIsoft.AF.PI;
 using OSIsoft.AF.Time;
@@ -17,23 +18,48 @@ namespace Core.AlarmProcessor
         private IPIConnectionManager _piCM;
         private bool _IsConnected;
         private PIServer _SitePI;
-        public AlarmReader(ILogger logger, IPIConnectionManager piCM)
+        private IReader _reader;
+        private IList<string> _nameList;
+        private int _totalCount;
+        private IList<string> _errorList = new List<string>();
+
+        public AlarmReader(ILogger logger, IPIConnectionManager piCM, IReader reader)
         {
             _logger = logger;
             _piCM = piCM;
+            _reader = reader;
         }
 
         //Get Alarm String
         public void RetrieveAlarm()
         {
-            string TagName = "CN.BJG.HMI0001.FLM01";
+
+            // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
+
+            // Retrieve list of Alarm PI Points from CSV
+            _nameList = _reader.readFile();
+            _totalCount = _nameList.Count;
+
+            var tasks = new List<Task>();
+            foreach (string Tagname in _nameList)
+            {
+                tasks.Add(RetrieveAlarmandUpdate(Tagname));
+                //string TagName = "CN.BJG.HMI0001.FLM01";
+            }
+            Task.WhenAll(tasks);
+        }
+
+        private Task RetrieveAlarmandUpdate(string tagname)
+        {
+
             PIPoint AlarmPoint = PIPoint.FindPIPoint(_SitePI, TagName);
 
+            // Get current time and start time of 10 mins ago
             DateTime endTime = DateTime.Now;
             DateTime startTime = endTime.AddMinutes(-10);
 
-            //Create Start time and End Time
+            //Create AF Start time and End Time
             AFTime startAFTime = new AFTime(startTime);
             AFTime endAFTime = new AFTime(endTime);
             AFTimeRange QueryRange = new AFTimeRange(startAFTime, endAFTime);
@@ -55,9 +81,9 @@ namespace Core.AlarmProcessor
             //Output source to a sourcelist from item
             var sourceList = filteredActiveList.Select((item) =>
             {
-                // return as an AF Value
-                //return item.Value.ToString().Split('|')[0];
-                return new AFValue
+                    // return as an AF Value
+                    //return item.Value.ToString().Split('|')[0];
+                    return new AFValue
                 {
                     Timestamp = item.Timestamp,
                     Value = item.Value.ToString().Split('|')[0]
@@ -75,7 +101,7 @@ namespace Core.AlarmProcessor
             string SourceTagname = "CN.BJG.FLM01.ALYS.ALARMS.SRC.TEST";
             PIPoint SourceTagPoint = PIPoint.FindPIPoint(_SitePI, SourceTagname);
             var InsertSourceData = SourceTagPoint.UpdateValues(AFsourceList, OSIsoft.AF.Data.AFUpdateOption.Insert);
-        
+
             //Output message to a messagelist from item
             var messageList = filteredActiveList.Select((item) =>
             {
@@ -108,11 +134,9 @@ namespace Core.AlarmProcessor
             CountTagPoint.UpdateValue(numActive, OSIsoft.AF.Data.AFUpdateOption.Insert);
 
 
-
-
             foreach (var item in messageList)
             {
-                _logger.Information("Timstamp :{0}, Message : {1}", item.Timestamp , item.Value);
+                _logger.Information("Timstamp :{0}, Message : {1}", item.Timestamp, item.Value);
             }
             foreach (var item in sourceList)
             {
@@ -129,7 +153,6 @@ namespace Core.AlarmProcessor
             //_logger.Information("Number of ACTIVE Alarmrs: {0}", filteredList.ToList().Count);
 
             //_logger.Information("Timestamp: {0}; Value: {1}", AlarmValue.Timestamp, AlarmValue.Value.ToString());
-
         }
     }
-}
+ 
