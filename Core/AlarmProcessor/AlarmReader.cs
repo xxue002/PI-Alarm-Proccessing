@@ -7,8 +7,6 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Core.AlarmProcessor
 {
@@ -18,34 +16,27 @@ namespace Core.AlarmProcessor
         private IPIConnectionManager _piCM;
         private bool _IsConnected;
         private PIServer _SitePI;
-        private IReader _reader;
-        private IList<Foo> _nameList;
         private DateTime _queryTime;
 
-        public AlarmReader(ILogger logger, IPIConnectionManager piCM, IReader reader)
+        public AlarmReader(ILogger logger, IPIConnectionManager piCM)
         {
             _logger = logger;
             _piCM = piCM;
-            _reader = reader;
         }
 
         //Get Alarm String
-        public void RetrieveAlarm()
+        public void RetrieveAlarm(IList<Foo> _csvlist)
         {
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
             _queryTime = DateTime.Now;
 
-            // Retrieve list of Alarm PI Points from CSV
-            _nameList = _reader.readFile();
-            _logger.Information("value : {0}", _nameList);
-
-            foreach (var item in _nameList)
+            foreach (var item in _csvlist)
             {
                 _logger.Information($"{item.AlarmTagInput} and {item.TagSuffixOutput}");
             }
 
-            foreach (var item in _nameList)
+            foreach (var item in _csvlist)
             {
                 RetrieveAlarmandUpdate(item);
             }
@@ -86,10 +77,10 @@ namespace Core.AlarmProcessor
                 sourceList = filterdHierarchyList.Select(item => createSource1(item));
             }
             
-            foreach (var item in sourceList)
-            {
-                _logger.Information($"{item.Timestamp} and {item.Value}");
-            }
+            //foreach (var item in sourceList)
+            //{
+            //    _logger.Information($"{item.Timestamp} and {item.Value}");
+            //}
 
             //Find the SRC tag and update values into the tag
             string SourceTagname = csvItem.TagSuffixOutput +  "SRC.TEST";
