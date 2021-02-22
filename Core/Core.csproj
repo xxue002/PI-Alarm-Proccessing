@@ -96,10 +96,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AlarmProcessor\AlarmReader.cs" />
-    <Compile Include="Backfiller\HistoryBackfiller.cs" />
-    <Compile Include="Backfiller\IHistoryBackfiller.cs" />
     <Compile Include="ConnectionManager\IPIConnectionManager.cs" />
     <Compile Include="FileReader\CsvReader.cs" />
+    <Compile Include="FileReader\Foo.cs" />
     <Compile Include="FileReader\IReader.cs" />
     <Compile Include="ProgressReport\ProgressBar.cs" />
     <Compile Include="Service\HDAService.cs" />
