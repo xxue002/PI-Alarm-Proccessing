@@ -20,8 +20,7 @@ namespace Core.AlarmProcessor
         private PIServer _SitePI;
         private IReader _reader;
         private IList<Foo> _nameList;
-        private int _totalCount;
-        private IList<string> _errorList = new List<string>();
+        private DateTime _queryTime;
 
         public AlarmReader(ILogger logger, IPIConnectionManager piCM, IReader reader)
         {
@@ -35,11 +34,12 @@ namespace Core.AlarmProcessor
         {
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
+            _queryTime = DateTime.Now;
 
             // Retrieve list of Alarm PI Points from CSV
             _nameList = _reader.readFile();
-            _totalCount = _nameList.Count();
             _logger.Information("value : {0}", _nameList);
+
             foreach (var item in _nameList)
             {
                 _logger.Information($"{item.AlarmTagInput} and {item.TagSuffixOutput}");
@@ -55,15 +55,7 @@ namespace Core.AlarmProcessor
         {
 
             PIPoint AlarmPoint = PIPoint.FindPIPoint(_SitePI, csvItem.AlarmTagInput);
-
-            // Get current time and start time of 10 mins ago
-            DateTime endTime = DateTime.Now;
-            DateTime startTime = endTime.AddMinutes(-10);
-
-            //Create AF Start time and End Time
-            AFTime startAFTime = new AFTime(startTime);
-            AFTime endAFTime = new AFTime(endTime);
-            AFTimeRange QueryRange = new AFTimeRange(startAFTime, endAFTime);
+            AFTimeRange QueryRange = GetQueryRange();
 
             //Retrive PI data with time range
             AFValues valueList = AlarmPoint.RecordedValues(QueryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
@@ -74,23 +66,30 @@ namespace Core.AlarmProcessor
                 return item.Value.ToString().Contains("|ACTIVE|");
             });
 
-            foreach (var item in filteredActiveList)
+            IEnumerable<AFValue> sourceList;
+            if (csvItem.Mode != "3")
             {
-                _logger.Information("Timestamp : {0} Value : {1}", item.Timestamp, item.Value.ToString());
-            }
-
-            //Output source to a sourcelist from item
-            var sourceList = filteredActiveList.Select((item) =>
-            {
-                // return as an AF Value
-                //return item.Value.ToString().Split('|')[0];
-                return new AFValue
+                sourceList = filteredActiveList.Select(item =>
                 {
-                    Timestamp = item.Timestamp,
-                    Value = item.Value.ToString().Split('|')[0]
-                };
-            });
+                    if (csvItem.Mode == "1") return createSource1(item);
+                    else return createSource2(item);
+                });
+            }
+            else
+            {
+                var filterdHierarchyList = filteredActiveList.Where((item) =>
+                {
+                    return item.Value.ToString().Split('|')[9].Contains(csvItem.Hierarchy);
 
+                });
+
+                sourceList = filterdHierarchyList.Select(item => createSource1(item));
+            }
+            
+            foreach (var item in sourceList)
+            {
+                _logger.Information($"{item.Timestamp} and {item.Value}");
+            }
 
             //Find the SRC tag and update values into the tag
             string SourceTagname = csvItem.TagSuffixOutput +  "SRC.TEST";
@@ -115,10 +114,40 @@ namespace Core.AlarmProcessor
             //Find the Count tag and update values into the tag
             string CountTagname = csvItem.TagSuffixOutput + "COUNT.TEST";
             PIPoint CountTagPoint = PIPoint.FindPIPoint(_SitePI, CountTagname);
-            var alarmCount = messageList.Count();
-            
-            AFValue numActive = new AFValue(alarmCount, endTime);
+            var alarmCount = sourceList.Count();
+            _logger.Information($"{alarmCount}");            
+            AFValue numActive = new AFValue(alarmCount, _queryTime);
             CountTagPoint.UpdateValue(numActive, OSIsoft.AF.Data.AFUpdateOption.Insert);
+        }
+
+        private AFValue createSource1(AFValue item)
+        {
+            return new AFValue
+            {
+                Timestamp = item.Timestamp,
+                Value = item.Value.ToString().Split('|')[0]
+            };
+        }
+
+        private AFValue createSource2(AFValue item)
+        {
+            return new AFValue
+            {
+                Timestamp = item.Timestamp,
+                Value = item.Value.ToString().Split('|')[0].Split('/')[3],
+            };
+        }
+
+        private AFTimeRange GetQueryRange()
+        {
+            DateTime endTime = _queryTime;
+            DateTime startTime = endTime.AddMinutes(-10);
+
+            //Create AF Start time and End Time
+            AFTime startAFTime = new AFTime(startTime);
+            AFTime endAFTime = new AFTime(endTime);
+            AFTimeRange QueryRange = new AFTimeRange(startAFTime, endAFTime);
+            return new AFTimeRange(startAFTime, endAFTime);
         }
     }
 }

@@ -32,10 +32,7 @@ namespace Core.Service
             if (!_IsConnected) return;
             else
             {
-                //await _backfiller.automateBackfill();
-                //_backfiller.logErrors();
-                _alarmReader.RetrieveAlarm();
-                
+                _alarmReader.RetrieveAlarm(); 
             }
         }
 

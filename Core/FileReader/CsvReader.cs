@@ -14,7 +14,6 @@ namespace Core.FileReader
         private string _path = AppSettings.Path;
         private string[] _fileList;
         private IList<string> _csvData = new List<string>();
-        private object row;
 
         public CsvReader(ILogger logger)
         {
