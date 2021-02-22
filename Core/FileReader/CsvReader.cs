@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Collections.Generic;
 using Core.Settings;
 using Serilog;
+using System.Linq;
 
 namespace Core.FileReader
 {
@@ -112,19 +113,17 @@ namespace Core.FileReader
         //        streamReader.Close();                
         //    } 
 
-        public Foo readFile()
+        public IList<Foo> readFile()
         {
-            Foo record;
+            IList<Foo> records;
             using (var streamReader = File.OpenText(showCsv())) 
             {
                 using (var csvReader = new CsvHelper.CsvReader(streamReader, CultureInfo.CurrentCulture))
                 {
-                    
-                    record = csvReader.GetRecord<Foo>();
-                    
+                    records = csvReader.GetRecords<Foo>().ToList();
                 }
             }
-            return record;
+            return records;
         }
     }
 }

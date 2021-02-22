@@ -19,7 +19,7 @@ namespace Core.AlarmProcessor
         private bool _IsConnected;
         private PIServer _SitePI;
         private IReader _reader;
-        private Foo _nameList;
+        private IList<Foo> _nameList;
         private int _totalCount;
         private IList<string> _errorList = new List<string>();
 
@@ -39,7 +39,11 @@ namespace Core.AlarmProcessor
             // Retrieve list of Alarm PI Points from CSV
             _nameList = _reader.readFile();
             _totalCount = _nameList.Count();
-            //_logger.Information("value : {0}", _nameList);
+            _logger.Information("value : {0}", _nameList);
+            foreach (var item in _nameList)
+            {
+                _logger.Information($"{item.AlarmTagInput} and {item.TagSuffixOutput}");
+            }
 
             foreach (var item in _nameList)
             {
