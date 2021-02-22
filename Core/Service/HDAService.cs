@@ -5,6 +5,7 @@ using OSIsoft.AF.PI;
 using Serilog;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace Core.Service
 {
@@ -18,6 +19,7 @@ namespace Core.Service
         private AlarmReader _alarmReader;
         private IReader _reader;
         private IList<Foo> _csvlist;
+        private Timer _aTimer;
 
         public HDAService(IPIConnectionManager piCM, ILogger logger, AlarmReader alarmReader, IReader reader)
         {
@@ -25,6 +27,8 @@ namespace Core.Service
             _logger = logger;
             _alarmReader = alarmReader;
             _reader = reader;
+
+
         }
 
         public async Task Start()
@@ -38,16 +42,16 @@ namespace Core.Service
             {
                 // Retrieve list of Alarm PI Points from CSV
                 _csvlist = _reader.readFile();
-                while (true)
-                {
-                    _alarmReader.RetrieveAlarm(_csvlist);
-                    await Task.Delay(5000);
-                }
+
+                _aTimer = new Timer(5000);
+                _aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+                _aTimer.Enabled = true;
             } 
         }
 
         public void Stop()
         {
+            //_aTimer.Dispose();
             if (_IsConnected) _piCM.Disconnect();
             _logger.Information("History Backfill Service completed");
             _logger.Information("=============================================================================================");
@@ -55,13 +59,9 @@ namespace Core.Service
         }
 
 
-        //public void OnTimedEvent(object source, ElapsedEventArgs e)
-        //{
-        //    System.Timers.Timer aTimer;
-        //    aTimer = new System.Timers.Timer();
-        //    aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-        //    aTimer.Interval = 2000;
-        //    aTimer.Enabled = true;
-        //}
+        public void OnTimedEvent(object source, ElapsedEventArgs e)
+        {
+            _alarmReader.RetrieveAlarm(_csvlist);
+        }
     }
 }
