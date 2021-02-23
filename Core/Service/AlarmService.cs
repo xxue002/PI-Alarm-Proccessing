@@ -9,7 +9,7 @@ using System.Timers;
 
 namespace Core.Service
 {
-    public class HDAService : IHDAService
+    public class AlarmService : IAlarmService
     {
         private ILogger _logger;
         private IPIConnectionManager _piCM;
@@ -21,7 +21,7 @@ namespace Core.Service
         private IList<Foo> _csvlist;
         private Timer _aTimer;
 
-        public HDAService(IPIConnectionManager piCM, ILogger logger, AlarmReader alarmReader, IReader reader)
+        public AlarmService(IPIConnectionManager piCM, ILogger logger, AlarmReader alarmReader, IReader reader)
         {
             _piCM = piCM;
             _logger = logger;
@@ -53,7 +53,7 @@ namespace Core.Service
         {
             //_aTimer.Dispose();
             if (_IsConnected) _piCM.Disconnect();
-            _logger.Information("History Backfill Service completed");
+            _logger.Information("PI Alarm Service completed");
             _logger.Information("=============================================================================================");
             _logger.Information("=============================================================================================");
         }

@@ -29,13 +29,13 @@ namespace Core
             builder.RegisterType<PIConnectionManager>().As<IPIConnectionManager>().SingleInstance();
             //builder.RegisterType<HistoryBackfiller>().As<IHistoryBackfiller>().SingleInstance();
             builder.RegisterType<AlarmReader>().SingleInstance();
-            builder.RegisterType<HDAService>().As<IHDAService>().SingleInstance();
+            builder.RegisterType<AlarmService>().As<IAlarmService>().SingleInstance();
             _container = builder.Build();
         }
 
         static async Task Main(string[] args)
         {
-            var service = _container.Resolve<IHDAService>();
+            var service = _container.Resolve<IAlarmService>();
             await service.Start();
             service.Stop();
             Console.ReadLine();

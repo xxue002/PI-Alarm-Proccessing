@@ -101,8 +101,8 @@
     <Compile Include="FileReader\Foo.cs" />
     <Compile Include="FileReader\IReader.cs" />
     <Compile Include="ProgressReport\ProgressBar.cs" />
-    <Compile Include="Service\HDAService.cs" />
-    <Compile Include="Service\IHDAService.cs" />
+    <Compile Include="Service\AlarmService.cs" />
+    <Compile Include="Service\IAlarmService.cs" />
     <Compile Include="ConnectionManager\PIConnectionManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
