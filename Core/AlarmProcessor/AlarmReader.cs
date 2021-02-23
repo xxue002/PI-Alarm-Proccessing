@@ -44,7 +44,6 @@ namespace Core.AlarmProcessor
 
         private void RetrieveAlarmandUpdate(Foo csvItem)
         {
-
             PIPoint AlarmPoint = PIPoint.FindPIPoint(_SitePI, csvItem.AlarmTagInput);
             AFTimeRange QueryRange = GetQueryRange();
 
@@ -71,16 +70,10 @@ namespace Core.AlarmProcessor
                 var filterdHierarchyList = filteredActiveList.Where((item) =>
                 {
                     return item.Value.ToString().Split('|')[9].Contains(csvItem.Hierarchy);
-
                 });
 
                 sourceList = filterdHierarchyList.Select(item => createSource1(item));
             }
-            
-            //foreach (var item in sourceList)
-            //{
-            //    _logger.Information($"{item.Timestamp} and {item.Value}");
-            //}
 
             //Find the SRC tag and update values into the tag
             string SourceTagname = csvItem.TagSuffixOutput +  "SRC.TEST";

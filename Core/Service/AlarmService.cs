@@ -51,7 +51,7 @@ namespace Core.Service
 
         public void Stop()
         {
-            //_aTimer.Dispose();
+            _aTimer.Dispose();
             if (_IsConnected) _piCM.Disconnect();
             _logger.Information("PI Alarm Service completed");
             _logger.Information("=============================================================================================");
