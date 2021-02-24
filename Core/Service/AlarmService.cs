@@ -3,6 +3,7 @@ using Core.ConnectionManager;
 using Core.FileReader;
 using OSIsoft.AF.PI;
 using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Timers;
@@ -34,6 +35,7 @@ namespace Core.Service
         public async Task Start()
         {
             _logger.Information("Alarm Service started successfully");
+            _logger.Information($"{AppDomain.CurrentDomain.BaseDirectory}");
             (_IsConnected, _SitePI) = _piCM.Connect();
 
             // If cannot connecto to PI Data Collective, return to terminate console app
