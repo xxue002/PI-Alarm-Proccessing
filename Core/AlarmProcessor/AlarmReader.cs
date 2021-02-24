@@ -33,7 +33,7 @@ namespace Core.AlarmProcessor
 
             foreach (var item in _csvlist)
             {
-                _logger.Information($"{item.AlarmTagInput} and {item.TagSuffixOutput}");
+                _logger.Information($"Alarm Tag:{item.AlarmTagInput}");
             }
 
             foreach (var item in _csvlist)
@@ -44,6 +44,7 @@ namespace Core.AlarmProcessor
 
         private void RetrieveAlarmandUpdate(Foo csvItem)
         {
+            _logger.Information($"Enter retrieve alarm and udpate ");
             PIPoint AlarmPoint = PIPoint.FindPIPoint(_SitePI, csvItem.AlarmTagInput);
             AFTimeRange QueryRange = GetQueryRange();
 
@@ -73,6 +74,7 @@ namespace Core.AlarmProcessor
                 });
 
                 sourceList = filterdHierarchyList.Select(item => createSource1(item));
+                //_logger.Information($"{sourceList}");
             }
 
             //Find the SRC tag and update values into the tag
@@ -94,6 +96,7 @@ namespace Core.AlarmProcessor
             string MSGTagname = csvItem.TagSuffixOutput + "MSG.TEST";
             PIPoint MSGTagPoint = PIPoint.FindPIPoint(_SitePI, MSGTagname);
             MSGTagPoint.UpdateValues(messageList.ToList(), OSIsoft.AF.Data.AFUpdateOption.Insert);
+
 
             //Find the Count tag and update values into the tag
             string CountTagname = csvItem.TagSuffixOutput + "COUNT.TEST";
@@ -118,8 +121,8 @@ namespace Core.AlarmProcessor
             return new AFValue
             {
                 Timestamp = item.Timestamp,
-                Value = item.Value.ToString().Split('|')[0].Split('/')[3],
-            };
+                Value = item.Value.ToString().Split('|')[0].Split('/')[3]
+        };
         }
 
         private AFTimeRange GetQueryRange()

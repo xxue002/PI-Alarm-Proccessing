@@ -45,7 +45,7 @@ namespace Core.Service
                 // Retrieve list of Alarm PI Points from CSV
                 _csvlist = _reader.readFile();
 
-                _aTimer = new Timer(5000);
+                _aTimer = new Timer(15000);
                 _aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
                 _aTimer.Enabled = true;
             } 
