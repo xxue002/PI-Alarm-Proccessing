@@ -1,6 +1,7 @@
 ﻿using Core.AlarmProcessor;
 using Core.ConnectionManager;
 using Core.FileReader;
+using Core.Settings;
 using OSIsoft.AF.PI;
 using Serilog;
 using System;
@@ -19,8 +20,8 @@ namespace Core.Service
         private bool _IsConnected;
         private AlarmReader _alarmReader;
         private IReader _reader;
-        private IList<Foo> _csvlist;
-        private Timer _aTimer;
+        private static IList<Foo> _csvlist;
+        private static Timer _aTimer;
 
         public AlarmService(IPIConnectionManager piCM, ILogger logger, AlarmReader alarmReader, IReader reader)
         {
@@ -45,7 +46,7 @@ namespace Core.Service
                 // Retrieve list of Alarm PI Points from CSV
                 _csvlist = _reader.readFile();
 
-                _aTimer = new Timer(15000);
+                _aTimer = new Timer(AppSettings.Freq*1000);
                 _aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
                 _aTimer.Enabled = true;
             } 
@@ -63,7 +64,7 @@ namespace Core.Service
 
         public void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            _alarmReader.RetrieveAlarm(_csvlist);
+            _alarmReader.RetrieveAlarm(_csvlist, e.SignalTime);
         }
     }
 }

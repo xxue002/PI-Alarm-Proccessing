@@ -1,5 +1,6 @@
 ﻿using Core.ConnectionManager;
 using Core.FileReader;
+using Core.Settings;
 using OSIsoft.AF.Asset;
 using OSIsoft.AF.PI;
 using OSIsoft.AF.Time;
@@ -17,6 +18,9 @@ namespace Core.AlarmProcessor
         private bool _IsConnected;
         private PIServer _SitePI;
         private DateTime _queryTime;
+        private int _freq = AppSettings.Freq;
+        private int _period = AppSettings.Interval;
+        private AFTimeRange _queryRange;
 
         public AlarmReader(ILogger logger, IPIConnectionManager piCM)
         {
@@ -25,12 +29,13 @@ namespace Core.AlarmProcessor
         }
 
         //Get Alarm String
-        public void RetrieveAlarm(IList<Foo> _csvlist)
+        public void RetrieveAlarm(IList<Foo> _csvlist, DateTime signalTime)
         {
             _logger.Information($"Start Cycle");
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
-            _queryTime = DateTime.Now;
+            _queryTime = signalTime;
+            _queryRange = GetQueryRange();
 
             foreach (var item in _csvlist)
             {
@@ -61,10 +66,10 @@ namespace Core.AlarmProcessor
             PIPoint MSGTagPoint = messageSearch.Item2;
             PIPoint CountTagPoint = countSearch.Item2;
 
-            AFTimeRange QueryRange = GetQueryRange();
+            
 
             //Retrive PI data with time range
-            AFValues valueList = AlarmPoint.RecordedValues(QueryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
+            AFValues valueList = AlarmPoint.RecordedValues(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
 
             //Filter the list of PI Data with "|ACTIVE|"
             var filteredActiveList = valueList.Where((item) =>
@@ -111,7 +116,7 @@ namespace Core.AlarmProcessor
             TryUpdateValues(MSGTagPoint, messageList, csvItem);
 
             //Find the Count tag and update values into the tag        
-            AFValue numActive = new AFValue(sourceList.Count(), _queryTime);
+            AFValue numActive = new AFValue(sourceList.Count(), _RoundDown(_queryTime));
             // Make numActive into an 1-member IEnumerable because TryUpdateValues require IEnumerable as a parameter
             IEnumerable<AFValue> numActiveList = new List<AFValue>() { numActive }; 
             TryUpdateValues(CountTagPoint, numActiveList, csvItem);
@@ -137,8 +142,11 @@ namespace Core.AlarmProcessor
 
         private AFTimeRange GetQueryRange()
         {
-            DateTime endTime = _queryTime;
-            DateTime startTime = endTime.AddMinutes(-10);
+            DateTime endTime = _RoundDown(_queryTime);
+            _logger.Information($"{endTime.ToString()}");
+
+            DateTime startTime = endTime.AddSeconds(-_period);
+            _logger.Information($"{startTime.ToString()}");
 
             //Create AF Start time and End Time
             AFTime startAFTime = new AFTime(startTime);
@@ -147,6 +155,13 @@ namespace Core.AlarmProcessor
             return new AFTimeRange(startAFTime, endAFTime);
         }
 
+        private DateTime _RoundDown(DateTime queryTime)
+        {
+            var ticksInFreq = TimeSpan.FromSeconds(_freq).Ticks;
+            return (queryTime.Ticks % ticksInFreq == 0) ? queryTime : new DateTime((queryTime.Ticks / ticksInFreq) * ticksInFreq);
+        }
+
+        // Wrap the UpdateValues in a Try Catch to deal with exceptions and prevent service from hard crashing
         private void TryUpdateValues(PIPoint sourcePoint, IEnumerable<AFValue> values, Foo csvItem)
         {
             try
@@ -160,6 +175,7 @@ namespace Core.AlarmProcessor
 
         }
 
+        // Try to find PI Point, if no point found, return False and a null PI Point, else return true and the PI Point
         private (bool, PIPoint) GetPIPoint(string piPointName, string category = "")
         {
             PIPoint OutputPIPoint;
