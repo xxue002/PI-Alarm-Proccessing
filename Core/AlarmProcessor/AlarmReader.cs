@@ -17,7 +17,7 @@ namespace Core.AlarmProcessor
         private IPIConnectionManager _piCM;
         private bool _IsConnected;
         private PIServer _SitePI;
-        private DateTime _queryTime;
+        private DateTime _signalTime;
         private int _freq = AppSettings.Freq;
         private int _period = AppSettings.Interval;
         private AFTimeRange _queryRange;
@@ -34,8 +34,9 @@ namespace Core.AlarmProcessor
             _logger.Information($"Start Cycle");
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
-            _queryTime = signalTime;
-            _queryRange = GetQueryRange();
+            _signalTime = signalTime;
+            
+            _queryRange = GetQueryRange(_signalTime);
 
             foreach (var item in _csvlist)
             {
@@ -66,10 +67,10 @@ namespace Core.AlarmProcessor
             PIPoint MSGTagPoint = messageSearch.Item2;
             PIPoint CountTagPoint = countSearch.Item2;
 
-            
-
             //Retrive PI data with time range
+            _logger.Information($"getvalues {_queryRange}");
             AFValues valueList = AlarmPoint.RecordedValues(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
+            _logger.Information("getvalues ended");
 
             //Filter the list of PI Data with "|ACTIVE|"
             var filteredActiveList = valueList.Where((item) =>
@@ -116,7 +117,7 @@ namespace Core.AlarmProcessor
             TryUpdateValues(MSGTagPoint, messageList, csvItem);
 
             //Find the Count tag and update values into the tag        
-            AFValue numActive = new AFValue(sourceList.Count(), _RoundDown(_queryTime));
+            AFValue numActive = new AFValue(sourceList.Count(), _RoundDown(_signalTime));
             // Make numActive into an 1-member IEnumerable because TryUpdateValues require IEnumerable as a parameter
             IEnumerable<AFValue> numActiveList = new List<AFValue>() { numActive }; 
             TryUpdateValues(CountTagPoint, numActiveList, csvItem);
@@ -140,25 +141,24 @@ namespace Core.AlarmProcessor
         };
         }
 
-        private AFTimeRange GetQueryRange()
+        private AFTimeRange GetQueryRange(DateTime signalTime)
         {
-            DateTime endTime = _RoundDown(_queryTime);
-            _logger.Information($"{endTime.ToString()}");
-
+            DateTime endTime = _RoundDown(signalTime);
             DateTime startTime = endTime.AddSeconds(-_period);
-            _logger.Information($"{startTime.ToString()}");
-
+            //_logger.Information($"{endTime} and {endTime.Kind}");
+            
             //Create AF Start time and End Time
             AFTime startAFTime = new AFTime(startTime);
             AFTime endAFTime = new AFTime(endTime);
             AFTimeRange QueryRange = new AFTimeRange(startAFTime, endAFTime);
-            return new AFTimeRange(startAFTime, endAFTime);
+            //_logger.Information($"{QueryRange}");
+            return QueryRange;
         }
 
-        private DateTime _RoundDown(DateTime queryTime)
+        private DateTime _RoundDown(DateTime timeObj)
         {
             var ticksInFreq = TimeSpan.FromSeconds(_freq).Ticks;
-            return (queryTime.Ticks % ticksInFreq == 0) ? queryTime : new DateTime((queryTime.Ticks / ticksInFreq) * ticksInFreq);
+            return (timeObj.Ticks % ticksInFreq == 0) ? new DateTime(timeObj.Ticks, DateTimeKind.Local) : new DateTime((timeObj.Ticks / ticksInFreq) * ticksInFreq, DateTimeKind.Local);
         }
 
         // Wrap the UpdateValues in a Try Catch to deal with exceptions and prevent service from hard crashing
