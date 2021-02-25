@@ -2,6 +2,7 @@
 using OSIsoft.AF.PI;
 using Serilog;
 using System;
+using System.Net;
 
 namespace Core.ConnectionManager
 {
@@ -10,6 +11,7 @@ namespace Core.ConnectionManager
         private static PIServer _SitePI;
         private ILogger _logger;
         private string _PICollectiveName = AppSettings.PICollectiveName;
+        private static NetworkCredential _credential = new NetworkCredential("pivisionservice", "Zzb7Bdfm", "WIL");
 
         public PIConnectionManager(ILogger logger)
         {
@@ -40,7 +42,7 @@ namespace Core.ConnectionManager
                 try
                 {
                     _logger.Information("Connecting to PI {0}", _PICollectiveName);
-                    _SitePI.Connect();
+                    _SitePI.Connect(_credential, PIAuthenticationMode.WindowsAuthentication);
 
                     // Connection Info
                     _logger.Information("Connected to {0} at port {1} as user {2}", _SitePI.ConnectionInfo.Host, _SitePI.ConnectionInfo.Port, _SitePI.CurrentUserName);
