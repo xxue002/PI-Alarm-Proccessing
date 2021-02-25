@@ -27,25 +27,40 @@ namespace Core.AlarmProcessor
         //Get Alarm String
         public void RetrieveAlarm(IList<Foo> _csvlist)
         {
+            _logger.Information($"Start Cycle");
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
             _queryTime = DateTime.Now;
 
             foreach (var item in _csvlist)
             {
-                _logger.Information($"Alarm Tag:{item.AlarmTagInput}");
-            }
-
-            foreach (var item in _csvlist)
-            {
                 RetrieveAlarmandUpdate(item);
             }
+
+            _logger.Information($"End Cycle");
         }
 
         private void RetrieveAlarmandUpdate(Foo csvItem)
         {
-            _logger.Information($"Enter retrieve alarm and udpate ");
-            PIPoint AlarmPoint = PIPoint.FindPIPoint(_SitePI, csvItem.AlarmTagInput);
+            // do search for all PI Points required for alarm processing
+            var alarmSearch = GetPIPoint(csvItem.AlarmTagInput, "");
+            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC.TEST");
+            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG.TEST");
+            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT.TEST");
+
+            // If any of the search above fails, exit the operation
+            if ((!alarmSearch.Item1) || (!sourceSearch.Item1) || (!messageSearch.Item1) || (!countSearch.Item1))
+            {
+                _logger.Error($"Some of the PI Points required for {csvItem.AlarmTagInput} don't exist");
+                return;
+            }
+
+            // Else continue processing alarms and updating relevant PI Points
+            PIPoint AlarmPoint = alarmSearch.Item2;
+            PIPoint SourceTagPoint = sourceSearch.Item2;
+            PIPoint MSGTagPoint = messageSearch.Item2;
+            PIPoint CountTagPoint = countSearch.Item2;
+
             AFTimeRange QueryRange = GetQueryRange();
 
             //Retrive PI data with time range
@@ -57,6 +72,7 @@ namespace Core.AlarmProcessor
                 return item.Value.ToString().Contains("|ACTIVE|");
             });
 
+            //Choose the code to execute base on the mode
             IEnumerable<AFValue> sourceList;
             if (csvItem.Mode != "3")
             {
@@ -68,20 +84,19 @@ namespace Core.AlarmProcessor
             }
             else
             {
-                var filterdHierarchyList = filteredActiveList.Where((item) =>
+                filteredActiveList = filteredActiveList.Where((item) =>
                 {
                     return item.Value.ToString().Split('|')[9].Contains(csvItem.Hierarchy);
                 });
 
-                sourceList = filterdHierarchyList.Select(item => createSource1(item));
-                //_logger.Information($"{sourceList}");
+                sourceList = filteredActiveList.Select(item => createSource1(item));
             }
 
-            //Find the SRC tag and update values into the tag
-            string SourceTagname = csvItem.TagSuffixOutput +  "SRC.TEST";
-            PIPoint SourceTagPoint = PIPoint.FindPIPoint(_SitePI, SourceTagname);
-            SourceTagPoint.UpdateValues(sourceList.ToList(), OSIsoft.AF.Data.AFUpdateOption.Insert);
+            _logger.Information($"Tag {csvItem.AlarmTagInput} has {sourceList.Count()} alarms in the past 10 Minutes");
 
+            //Find the SRC tag and update values into the tag
+            TryUpdateValues(SourceTagPoint, sourceList, csvItem);
+            
             //Output message to a messagelist from item
             var messageList = filteredActiveList.Select((item) =>
             {
@@ -93,18 +108,13 @@ namespace Core.AlarmProcessor
             });
 
             //Find the MSG tag and update values into the tag
-            string MSGTagname = csvItem.TagSuffixOutput + "MSG.TEST";
-            PIPoint MSGTagPoint = PIPoint.FindPIPoint(_SitePI, MSGTagname);
-            MSGTagPoint.UpdateValues(messageList.ToList(), OSIsoft.AF.Data.AFUpdateOption.Insert);
+            TryUpdateValues(MSGTagPoint, messageList, csvItem);
 
-
-            //Find the Count tag and update values into the tag
-            string CountTagname = csvItem.TagSuffixOutput + "COUNT.TEST";
-            PIPoint CountTagPoint = PIPoint.FindPIPoint(_SitePI, CountTagname);
-            var alarmCount = sourceList.Count();
-            _logger.Information($"{alarmCount}");            
-            AFValue numActive = new AFValue(alarmCount, _queryTime);
-            CountTagPoint.UpdateValue(numActive, OSIsoft.AF.Data.AFUpdateOption.Insert);
+            //Find the Count tag and update values into the tag        
+            AFValue numActive = new AFValue(sourceList.Count(), _queryTime);
+            // Make numActive into an 1-member IEnumerable because TryUpdateValues require IEnumerable as a parameter
+            IEnumerable<AFValue> numActiveList = new List<AFValue>() { numActive }; 
+            TryUpdateValues(CountTagPoint, numActiveList, csvItem);
         }
 
         private AFValue createSource1(AFValue item)
@@ -135,6 +145,27 @@ namespace Core.AlarmProcessor
             AFTime endAFTime = new AFTime(endTime);
             AFTimeRange QueryRange = new AFTimeRange(startAFTime, endAFTime);
             return new AFTimeRange(startAFTime, endAFTime);
+        }
+
+        private void TryUpdateValues(PIPoint sourcePoint, IEnumerable<AFValue> values, Foo csvItem)
+        {
+            try
+            {
+                sourcePoint.UpdateValues(values.ToList(), OSIsoft.AF.Data.AFUpdateOption.Insert);
+            }
+            catch (ArgumentException e)
+            {
+                _logger.Information($"There are no |ACTIVE| alarms in the last 10mins for {csvItem.AlarmTagInput}.");
+            }
+
+        }
+
+        private (bool, PIPoint) GetPIPoint(string piPointName, string category = "")
+        {
+            PIPoint OutputPIPoint;
+            string pointName = piPointName + category;
+            bool result = PIPoint.TryFindPIPoint(_SitePI, pointName, out OutputPIPoint);
+            return (result, OutputPIPoint);
         }
     }
 }
