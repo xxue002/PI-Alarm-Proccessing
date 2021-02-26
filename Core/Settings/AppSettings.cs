@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Core.Settings
 {
     public class AppSettings
     {
         public static string PICollectiveName => StringRetriever("PICollectiveName");
-
+        public static string Path => StringRetriever("CSVLocation");
+        public static int Freq => Convert.ToInt16(StringRetriever("FrequencyInSeconds"));
+        public static int Interval => Convert.ToInt16(StringRetriever("PeriodInSeconds"));
         private static string StringRetriever(string key)
         {
             return ConfigurationManager.AppSettings[key];
