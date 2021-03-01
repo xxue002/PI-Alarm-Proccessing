@@ -8,6 +8,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Core.AlarmProcessor
@@ -22,11 +23,13 @@ namespace Core.AlarmProcessor
         private int _freq = AppSettings.Freq;
         private int _period = AppSettings.Interval;
         private AFTimeRange _queryRange;
+        private SemaphoreSlim _throttler ;
 
         public AlarmReader(ILogger logger, IPIConnectionManager piCM)
         {
             _logger = logger;
             _piCM = piCM;
+            _throttler = new SemaphoreSlim(1,1);
         }
 
         //Get Alarm String
@@ -42,6 +45,7 @@ namespace Core.AlarmProcessor
             var taskList = new List<Task>();
             foreach (var item in _csvlist)
             {
+
                 taskList.Add(_RetrieveAlarmandUpdateAsync(item));
                 //RetrieveAlarmandUpdate(item);
             }
@@ -52,6 +56,8 @@ namespace Core.AlarmProcessor
 
         private async Task _RetrieveAlarmandUpdateAsync(Foo csvItem)
         {
+            await _throttler.WaitAsync();
+
             // do search for all PI Points required for alarm processing
             var alarmSearch = GetPIPoint(csvItem.AlarmTagInput, "");
             var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC.TEST");
@@ -72,9 +78,7 @@ namespace Core.AlarmProcessor
             PIPoint CountTagPoint = countSearch.Item2;
 
             //Retrive PI data with time range
-            _logger.Information($"getvalues {_queryRange}");
             var valueList = AlarmPoint.RecordedValues(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
-            _logger.Information("getvalues ended");
 
             //Filter the list of PI Data with "|ACTIVE|"
             var filteredActiveList = valueList.Where((item) =>
@@ -125,6 +129,8 @@ namespace Core.AlarmProcessor
             updateTasks.Add(_TryUpdateValuesAsync(MSGTagPoint, messageList, csvItem));
             updateTasks.Add(_TryUpdateValuesAsync(CountTagPoint, numActiveList, csvItem));
             await Task.WhenAll(updateTasks);
+
+            _throttler.Release();
         }
 
         private AFValue createSource1(AFValue item)
