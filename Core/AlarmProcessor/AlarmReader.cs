@@ -8,6 +8,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Core.AlarmProcessor
 {
@@ -29,7 +30,7 @@ namespace Core.AlarmProcessor
         }
 
         //Get Alarm String
-        public void RetrieveAlarm(IList<Foo> _csvlist, DateTime signalTime)
+        public async Task RetrieveAlarmAsync(IList<Foo> _csvlist, DateTime signalTime)
         {
             _logger.Information($"Start Cycle");
             // Retrieve connected PIServer from PIConnectionManager
@@ -38,15 +39,18 @@ namespace Core.AlarmProcessor
             
             _queryRange = GetQueryRange(_signalTime);
 
+            var taskList = new List<Task>();
             foreach (var item in _csvlist)
             {
-                RetrieveAlarmandUpdate(item);
+                taskList.Add(_RetrieveAlarmandUpdateAsync(item));
+                //RetrieveAlarmandUpdate(item);
             }
 
+            await Task.WhenAll(taskList);
             _logger.Information($"End Cycle");
         }
 
-        private void RetrieveAlarmandUpdate(Foo csvItem)
+        private async Task _RetrieveAlarmandUpdateAsync(Foo csvItem)
         {
             // do search for all PI Points required for alarm processing
             var alarmSearch = GetPIPoint(csvItem.AlarmTagInput, "");
