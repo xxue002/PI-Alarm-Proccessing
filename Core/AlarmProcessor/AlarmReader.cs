@@ -73,7 +73,7 @@ namespace Core.AlarmProcessor
 
             //Retrive PI data with time range
             _logger.Information($"getvalues {_queryRange}");
-            AFValues valueList = AlarmPoint.RecordedValues(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
+            var valueList = AlarmPoint.RecordedValues(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
             _logger.Information("getvalues ended");
 
             //Filter the list of PI Data with "|ACTIVE|"
@@ -103,9 +103,6 @@ namespace Core.AlarmProcessor
             }
 
             _logger.Information($"Tag {csvItem.AlarmTagInput} has {sourceList.Count()} alarms in the past 10 Minutes");
-
-            //Find the SRC tag and update values into the tag
-            TryUpdateValues(SourceTagPoint, sourceList, csvItem);
             
             //Output message to a messagelist from item
             var messageList = filteredActiveList.Select((item) =>
@@ -117,14 +114,17 @@ namespace Core.AlarmProcessor
                 };
             });
 
-            //Find the MSG tag and update values into the tag
-            TryUpdateValues(MSGTagPoint, messageList, csvItem);
-
             //Find the Count tag and update values into the tag        
             AFValue numActive = new AFValue(sourceList.Count(), _RoundDown(_signalTime));
             // Make numActive into an 1-member IEnumerable because TryUpdateValues require IEnumerable as a parameter
-            IEnumerable<AFValue> numActiveList = new List<AFValue>() { numActive }; 
-            TryUpdateValues(CountTagPoint, numActiveList, csvItem);
+            IEnumerable<AFValue> numActiveList = new List<AFValue>() { numActive };
+
+            // create a list of parallel PI Point UpdateValues Task
+            var updateTasks = new List<Task>();
+            updateTasks.Add(_TryUpdateValuesAsync(SourceTagPoint, sourceList, csvItem));
+            updateTasks.Add(_TryUpdateValuesAsync(MSGTagPoint, messageList, csvItem));
+            updateTasks.Add(_TryUpdateValuesAsync(CountTagPoint, numActiveList, csvItem));
+            await Task.WhenAll(updateTasks);
         }
 
         private AFValue createSource1(AFValue item)
@@ -166,17 +166,16 @@ namespace Core.AlarmProcessor
         }
 
         // Wrap the UpdateValues in a Try Catch to deal with exceptions and prevent service from hard crashing
-        private void TryUpdateValues(PIPoint sourcePoint, IEnumerable<AFValue> values, Foo csvItem)
+        private async Task _TryUpdateValuesAsync(PIPoint sourcePoint, IEnumerable<AFValue> values, Foo csvItem)
         {
             try
             {
-                sourcePoint.UpdateValues(values.ToList(), OSIsoft.AF.Data.AFUpdateOption.Insert);
+                await sourcePoint.UpdateValuesAsync(values.ToList(), OSIsoft.AF.Data.AFUpdateOption.Insert);
             }
-            catch (ArgumentException e)
+            catch(ArgumentException e)
             {
                 _logger.Information($"There are no |ACTIVE| alarms in the last 10mins for {csvItem.AlarmTagInput}.");
             }
-
         }
 
         // Try to find PI Point, if no point found, return False and a null PI Point, else return true and the PI Point

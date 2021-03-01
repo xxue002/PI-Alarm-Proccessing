@@ -65,11 +65,11 @@ namespace Core.Service
         }
 
 
-        public void OnTimedEvent(object source, ElapsedEventArgs e)
+        public async void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             //_aTimer.Interval = GetInterval();
             //_aTimer.Start();
-            _alarmReader.RetrieveAlarm(_csvlist, e.SignalTime);
+            await _alarmReader.RetrieveAlarmAsync(_csvlist, e.SignalTime);
         }
 
 
