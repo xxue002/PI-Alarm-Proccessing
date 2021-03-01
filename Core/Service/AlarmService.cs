@@ -47,9 +47,11 @@ namespace Core.Service
                 _csvlist = _reader.readFile();
 
                 _aTimer = new Timer(AppSettings.Freq*1000);
-               
                 _aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
                 _aTimer.Enabled = true;
+                //_aTimer.AutoReset = false;
+                //_aTimer.Interval = GetInterval();
+                //_aTimer.Start();
             } 
         }
 
@@ -65,9 +67,19 @@ namespace Core.Service
 
         public void OnTimedEvent(object source, ElapsedEventArgs e)
         {
-            //Is it possible to round up the signaltime to nearest whole 10 min number? Eg if trigger start service at 1:18pm, the service will only begin at 1:20pm
-            //So that the value will always be updated at the beginning of the 10 minutes.
+            //_aTimer.Interval = GetInterval();
+            //_aTimer.Start();
             _alarmReader.RetrieveAlarm(_csvlist, e.SignalTime);
         }
+
+
+        //private double GetInterval()
+        //{
+        //    DateTime now = DateTime.Now;
+        //    //var interval = (AppSettings.Freq - now.Minute*60 - now.Second) *1000 - now.Millisecond;
+        //    var interval = (AppSettings.Freq - now.Minute * 60 - now.Second) * 1000 - now.Millisecond;
+        //    if (interval > 0) return interval;
+        //    else return (AppSettings.Freq*1000 + interval);
+        //}
     }
 }
