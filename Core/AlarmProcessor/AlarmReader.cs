@@ -60,14 +60,15 @@ namespace Core.AlarmProcessor
 
             // do search for all PI Points required for alarm processing
             var alarmSearch = GetPIPoint(csvItem.AlarmTagInput, "");
-            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC");
-            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG");
-            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT");
+            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC.TEST");
+            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG.TEST");
+            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT.TEST");
 
             // If any of the search above fails, exit the operation
             if ((!alarmSearch.Item1) || (!sourceSearch.Item1) || (!messageSearch.Item1) || (!countSearch.Item1))
             {
                 _logger.Error($"Some of the PI Points required for {csvItem.AlarmTagInput} don't exist");
+                _throttler.Release();
                 return;
             }
 
@@ -148,7 +149,7 @@ namespace Core.AlarmProcessor
             {
                 Timestamp = item.Timestamp,
                 Value = item.Value.ToString().Split('|')[0].Split('/')[3]
-        };
+            };
         }
 
         private AFTimeRange GetQueryRange(DateTime signalTime)
