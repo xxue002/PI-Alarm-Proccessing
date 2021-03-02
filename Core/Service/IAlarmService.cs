@@ -4,7 +4,7 @@ namespace Core.Service
 {
     public interface IAlarmService
     {
-        Task Start();
+        void Start();
         void Stop();
     }
 }

@@ -33,7 +33,7 @@ namespace Core.Service
 
         }
 
-        public async Task Start()
+        public void Start()
         {
             _logger.Information("Alarm Service started successfully");
             _logger.Information($"{AppDomain.CurrentDomain.BaseDirectory}");
@@ -47,8 +47,9 @@ namespace Core.Service
                 _csvlist = _reader.readFile();
 
                 _aTimer = new Timer(AppSettings.Freq*1000);
-                _aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-                _aTimer.Enabled = true;
+                _aTimer.AutoReset = true;
+                _aTimer.Elapsed += new ElapsedEventHandler(_OnTimedEvent);
+                _aTimer.Start();
                 //_aTimer.AutoReset = false;
                 //_aTimer.Interval = GetInterval();
                 //_aTimer.Start();
@@ -65,11 +66,11 @@ namespace Core.Service
         }
 
 
-        public void OnTimedEvent(object source, ElapsedEventArgs e)
+        private async void _OnTimedEvent(object source, ElapsedEventArgs e)
         {
             //_aTimer.Interval = GetInterval();
             //_aTimer.Start();
-            _alarmReader.RetrieveAlarm(_csvlist, e.SignalTime);
+            await _alarmReader.RetrieveAlarmAsync(_csvlist, e.SignalTime);
         }
 
 
