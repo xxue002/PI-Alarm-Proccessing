@@ -7,6 +7,8 @@ namespace Core.Settings
     {
         public static string PICollectiveName => StringRetriever("PICollectiveName");
         public static string Path => StringRetriever("CSVLocation");
+        public static int IniThreadCount => Convert.ToInt16(StringRetriever("IniThreadCount"));
+        public static int MaxThreadCount => Convert.ToInt16(StringRetriever("MaxThreadCount"));
         public static int Freq => Convert.ToInt16(StringRetriever("FrequencyInSeconds"));
         public static int Interval => Convert.ToInt16(StringRetriever("PeriodInSeconds"));
         private static string StringRetriever(string key)

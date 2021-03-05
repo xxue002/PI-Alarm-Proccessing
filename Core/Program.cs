@@ -33,7 +33,7 @@ namespace Core
             _container = builder.Build();
         }
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             var rc = HostFactory.Run(x =>                                   
             {
