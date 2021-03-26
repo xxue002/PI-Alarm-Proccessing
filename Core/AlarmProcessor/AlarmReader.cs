@@ -89,7 +89,7 @@ namespace Core.AlarmProcessor
 
             //Choose the code to execute base on the mode
             IEnumerable<AFValue> sourceList;
-            if (csvItem.Mode != "3")
+            if (csvItem.Mode != "3" && csvItem.Mode !="4")
             {
                 sourceList = filteredActiveList.Select(item =>
                 {
@@ -101,7 +101,8 @@ namespace Core.AlarmProcessor
             {
                 filteredActiveList = filteredActiveList.Where((item) =>
                 {
-                    return item.Value.ToString().Split('|')[9].Contains(csvItem.Hierarchy);
+                    if (csvItem.Mode == "4") return item.Value.ToString().Split('|')[3].Contains(csvItem.Hierarchy);
+                    else return item.Value.ToString().Split('|')[9].Contains(csvItem.Hierarchy);
                 });
 
                 sourceList = filteredActiveList.Select(item => createSource1(item));
