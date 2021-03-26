@@ -60,9 +60,9 @@ namespace Core.AlarmProcessor
 
             // do search for all PI Points required for alarm processing
             var alarmSearch = GetPIPoint(csvItem.AlarmTagInput, "");
-            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC");
-            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG");
-            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT");
+            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC.TEST");
+            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG.TEST");
+            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT.TEST");
 
             // If any of the search above fails, exit the operation
             if ((!alarmSearch.Item1) || (!sourceSearch.Item1) || (!messageSearch.Item1) || (!countSearch.Item1))
@@ -94,6 +94,7 @@ namespace Core.AlarmProcessor
                 sourceList = filteredActiveList.Select(item =>
                 {
                     if (csvItem.Mode == "1") return createSource1(item);
+                    else if (csvItem.Mode == "4") return createSource3(item,csvItem); 
                     else return createSource2(item);
                 });
             }
@@ -149,6 +150,15 @@ namespace Core.AlarmProcessor
             {
                 Timestamp = item.Timestamp,
                 Value = item.Value.ToString().Split('|')[0].Split('/')[3]
+            };
+        }
+
+        private AFValue createSource3(AFValue item,Foo csvItem)
+        {
+            return new AFValue
+            {
+                Timestamp = item.Timestamp,
+                Value = item.Value.ToString().Split('|')[3].Contains(csvItem.Hierarchy)
             };
         }
 
