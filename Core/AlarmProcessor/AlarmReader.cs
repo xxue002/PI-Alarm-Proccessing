@@ -89,12 +89,11 @@ namespace Core.AlarmProcessor
 
             //Choose the code to execute base on the mode
             IEnumerable<AFValue> sourceList;
-            if (csvItem.Mode != "3")
+            if (csvItem.Mode != "3" && csvItem.Mode !="4")
             {
                 sourceList = filteredActiveList.Select(item =>
                 {
                     if (csvItem.Mode == "1") return createSource1(item);
-                    else if (csvItem.Mode == "4") return createSource3(item,csvItem); 
                     else return createSource2(item);
                 });
             }
@@ -102,7 +101,8 @@ namespace Core.AlarmProcessor
             {
                 filteredActiveList = filteredActiveList.Where((item) =>
                 {
-                    return item.Value.ToString().Split('|')[9].Contains(csvItem.Hierarchy);
+                    if (csvItem.Mode == "4") return item.Value.ToString().Split('|')[3].Contains(csvItem.Hierarchy);
+                    else return item.Value.ToString().Split('|')[9].Contains(csvItem.Hierarchy);
                 });
 
                 sourceList = filteredActiveList.Select(item => createSource1(item));
@@ -150,15 +150,6 @@ namespace Core.AlarmProcessor
             {
                 Timestamp = item.Timestamp,
                 Value = item.Value.ToString().Split('|')[0].Split('/')[3]
-            };
-        }
-
-        private AFValue createSource3(AFValue item,Foo csvItem)
-        {
-            return new AFValue
-            {
-                Timestamp = item.Timestamp,
-                Value = item.Value.ToString().Split('|')[3].Contains(csvItem.Hierarchy)
             };
         }
 
