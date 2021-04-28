@@ -36,8 +36,6 @@ namespace Core.AlarmProcessor
         public async Task RetrieveAlarmAsync(IList<Foo> _csvlist, DateTime signalTime)
         {
             _logger.Information($"Start Cycle");
-            // Connec to PIServer from PIConnectionManager
-            _piCM.Connect();
 
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();

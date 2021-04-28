@@ -20,6 +20,7 @@ namespace Core.ConnectionManager
 
         public (bool, PIServer) Connect()
         {
+            _logger.Information("Go into connect loop");
             // if _SitePI not initialized before, try get a handle for _SitePI specified in .config file.
             if (_SitePI == null)
             {
@@ -34,9 +35,14 @@ namespace Core.ConnectionManager
                     _logger.Information("Found PI Collective {0} specified in .config file", _PICollectiveName);
                 }
             }
-            
+
             // if _SitePI already initialized, check if it is connected
-            if (_SitePI.ConnectionInfo.IsConnected) return (true, _SitePI);
+            if (_SitePI.ConnectionInfo.IsConnected)
+            {
+                _logger.Information("Connected to PI {0}", _PICollectiveName);
+                return (true, _SitePI);
+            }
+
             else // else connect
             {
                 try
