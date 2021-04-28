@@ -36,6 +36,9 @@ namespace Core.AlarmProcessor
         public async Task RetrieveAlarmAsync(IList<Foo> _csvlist, DateTime signalTime)
         {
             _logger.Information($"Start Cycle");
+            // Connec to PIServer from PIConnectionManager
+            _piCM.Connect();
+
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
             _signalTime = signalTime;
@@ -60,9 +63,9 @@ namespace Core.AlarmProcessor
 
             // do search for all PI Points required for alarm processing
             var alarmSearch = GetPIPoint(csvItem.AlarmTagInput, "");
-            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC");
-            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG");
-            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT");
+            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC.TEST");
+            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG.TEST");
+            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT.TEST");
 
             // If any of the search above fails, exit the operation
             if ((!alarmSearch.Item1) || (!sourceSearch.Item1) || (!messageSearch.Item1) || (!countSearch.Item1))
