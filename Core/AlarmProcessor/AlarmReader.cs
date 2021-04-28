@@ -61,9 +61,9 @@ namespace Core.AlarmProcessor
 
             // do search for all PI Points required for alarm processing
             var alarmSearch = GetPIPoint(csvItem.AlarmTagInput, "");
-            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC.TEST");
-            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG.TEST");
-            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT.TEST");
+            var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC");
+            var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG");
+            var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT");
 
             // If any of the search above fails, exit the operation
             if ((!alarmSearch.Item1) || (!sourceSearch.Item1) || (!messageSearch.Item1) || (!countSearch.Item1))
