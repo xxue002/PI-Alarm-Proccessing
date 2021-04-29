@@ -20,7 +20,7 @@ namespace Core.ConnectionManager
 
         public (bool, PIServer) Connect()
         {
-            _logger.Information("Go into connect loop");
+            _logger.Information("Establishing Connection...");
             // if _SitePI not initialized before, try get a handle for _SitePI specified in .config file.
             if (_SitePI == null)
             {
@@ -39,7 +39,8 @@ namespace Core.ConnectionManager
             // if _SitePI already initialized, check if it is connected
             if (_SitePI.ConnectionInfo.IsConnected)
             {
-                _logger.Information("Connected to PI {0}", _PICollectiveName);
+                _SitePI.Connect(_credential, PIAuthenticationMode.WindowsAuthentication);
+                _logger.Information("Connected to {0} at port {1} as user {2}", _SitePI.ConnectionInfo.Host, _SitePI.ConnectionInfo.Port, _SitePI.CurrentUserName);
                 return (true, _SitePI);
             }
 
