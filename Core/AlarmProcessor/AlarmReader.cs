@@ -46,8 +46,7 @@ namespace Core.AlarmProcessor
             var taskList = new List<Task>();
             foreach (var item in _csvlist)
             {
-
-                taskList.Add(_RetrieveAlarmandUpdateAsync(item));
+               taskList.Add(_RetrieveAlarmandUpdateAsync(item));
                 //RetrieveAlarmandUpdate(item);
             }
 
@@ -64,7 +63,7 @@ namespace Core.AlarmProcessor
             var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC");
             var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG");
             var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT");
-
+            _logger.Information($"<<<Processing PI Point {csvItem.AlarmTagInput}.>>>");
             // If any of the search above fails, exit the operation
             if ((!alarmSearch.Item1) || (!sourceSearch.Item1) || (!messageSearch.Item1) || (!countSearch.Item1))
             {
@@ -132,7 +131,7 @@ namespace Core.AlarmProcessor
             updateTasks.Add(_TryUpdateValuesAsync(MSGTagPoint, messageList, csvItem));
             updateTasks.Add(_TryUpdateValuesAsync(CountTagPoint, numActiveList, csvItem));
             await Task.WhenAll(updateTasks);
-
+            _logger.Information($"---PI Point {csvItem.AlarmTagInput} has been processed.---");
             _throttler.Release();
         }
 
@@ -183,7 +182,7 @@ namespace Core.AlarmProcessor
             }
             catch(ArgumentException e)
             {
-                _logger.Information($"There are no |ACTIVE| alarms in the last 10mins for {csvItem.AlarmTagInput}.");
+                //_logger.Information($"There are no |ACTIVE| alarms in the last 10mins for {csvItem.AlarmTagInput}.");
             }
         }
 
