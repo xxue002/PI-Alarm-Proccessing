@@ -35,23 +35,32 @@ namespace Core.AlarmProcessor
         //Get Alarm String
         public async Task RetrieveAlarmAsync(IList<Foo> _csvlist, DateTime signalTime)
         {
-            _logger.Information($"Start Cycle");
-
             // Retrieve connected PIServer from PIConnectionManager
             (_IsConnected, _SitePI) = _piCM.Connect();
             _signalTime = signalTime;
             
             _queryRange = GetQueryRange(_signalTime);
 
-            var taskList = new List<Task>();
-            foreach (var item in _csvlist)
+            if (_IsConnected == true)
             {
-               taskList.Add(_RetrieveAlarmandUpdateAsync(item));
-                //RetrieveAlarmandUpdate(item);
+                _logger.Information($"Start Cycle");
+                var taskList = new List<Task>();
+                foreach (var item in _csvlist)
+                {
+                    taskList.Add(_RetrieveAlarmandUpdateAsync(item));
+                    //RetrieveAlarmandUpdate(item);
+                }
+                //Problem here, to do: cancel task and release throttler after 5 minutes
+                await Task.WhenAll(taskList);
+                _logger.Information($"End Cycle");
+                return;
             }
-
-            await Task.WhenAll(taskList);
-            _logger.Information($"End Cycle");
+            else
+            {
+                _logger.Error("Unable to start cycle");
+                return;
+            }
+            
         }
 
         private async Task _RetrieveAlarmandUpdateAsync(Foo csvItem)
@@ -63,7 +72,7 @@ namespace Core.AlarmProcessor
             var sourceSearch = GetPIPoint(csvItem.TagSuffixOutput, "SRC");
             var messageSearch = GetPIPoint(csvItem.TagSuffixOutput, "MSG");
             var countSearch = GetPIPoint(csvItem.TagSuffixOutput, "COUNT");
-            _logger.Information($"<<<Processing PI Point {csvItem.AlarmTagInput}.>>>");
+
             // If any of the search above fails, exit the operation
             if ((!alarmSearch.Item1) || (!sourceSearch.Item1) || (!messageSearch.Item1) || (!countSearch.Item1))
             {
@@ -78,9 +87,19 @@ namespace Core.AlarmProcessor
             PIPoint MSGTagPoint = messageSearch.Item2;
             PIPoint CountTagPoint = countSearch.Item2;
 
+            AFValues valueList;
             //Retrive PI data with time range
-            var valueList = AlarmPoint.RecordedValues(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
-
+            try
+            {
+                valueList = await AlarmPoint.RecordedValuesAsync(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
+            }
+            catch(Exception e)
+            {
+                _logger.Error($"Unable to get recorded values for {AlarmPoint.Name}: {e.Message}.");
+                _throttler.Release();
+                return;
+            }
+            
             //Filter the list of PI Data with "|ACTIVE|"
             var filteredActiveList = valueList.Where((item) =>
             {
@@ -131,7 +150,6 @@ namespace Core.AlarmProcessor
             updateTasks.Add(_TryUpdateValuesAsync(MSGTagPoint, messageList, csvItem));
             updateTasks.Add(_TryUpdateValuesAsync(CountTagPoint, numActiveList, csvItem));
             await Task.WhenAll(updateTasks);
-            _logger.Information($"---PI Point {csvItem.AlarmTagInput} has been processed.---");
             _throttler.Release();
         }
 
@@ -180,10 +198,13 @@ namespace Core.AlarmProcessor
             {
                 await sourcePoint.UpdateValuesAsync(values.ToList(), OSIsoft.AF.Data.AFUpdateOption.Insert);
             }
-            catch(ArgumentException e)
+            catch(Exception e)
             {
-                //_logger.Information($"There are no |ACTIVE| alarms in the last 10mins for {csvItem.AlarmTagInput}.");
+                _logger.Information($"Update values failed for {csvItem.AlarmTagInput}: {e.Message}");
+                return;
             }
+
+            return;
         }
 
         // Try to find PI Point, if no point found, return False and a null PI Point, else return true and the PI Point
