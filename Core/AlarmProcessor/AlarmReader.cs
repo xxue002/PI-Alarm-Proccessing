@@ -46,10 +46,10 @@ namespace Core.AlarmProcessor
             var taskList = new List<Task>();
             foreach (var item in _csvlist)
             {
-               taskList.Add(_RetrieveAlarmandUpdateAsync(item));
+                taskList.Add(_RetrieveAlarmandUpdateAsync(item));
                 //RetrieveAlarmandUpdate(item);
             }
-
+            //Problem here, to do: cancel task and release throttler after 5 minutes
             await Task.WhenAll(taskList);
             _logger.Information($"End Cycle");
         }
@@ -79,7 +79,7 @@ namespace Core.AlarmProcessor
             PIPoint CountTagPoint = countSearch.Item2;
 
             //Retrive PI data with time range
-            var valueList = AlarmPoint.RecordedValues(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
+            var valueList = await AlarmPoint.RecordedValuesAsync(_queryRange, OSIsoft.AF.Data.AFBoundaryType.Inside, null, false);
 
             //Filter the list of PI Data with "|ACTIVE|"
             var filteredActiveList = valueList.Where((item) =>
@@ -131,6 +131,7 @@ namespace Core.AlarmProcessor
             updateTasks.Add(_TryUpdateValuesAsync(MSGTagPoint, messageList, csvItem));
             updateTasks.Add(_TryUpdateValuesAsync(CountTagPoint, numActiveList, csvItem));
             await Task.WhenAll(updateTasks);
+
             _logger.Information($"---PI Point {csvItem.AlarmTagInput} has been processed.---");
             _throttler.Release();
         }

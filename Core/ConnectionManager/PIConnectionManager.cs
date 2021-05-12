@@ -37,6 +37,7 @@ namespace Core.ConnectionManager
             }
 
             // if _SitePI already initialized, check if it is connected
+            // This portion can be removed connect to PI straight away
             if (_SitePI.ConnectionInfo.IsConnected)
             {
                 _SitePI.Connect(_credential, PIAuthenticationMode.WindowsAuthentication);
