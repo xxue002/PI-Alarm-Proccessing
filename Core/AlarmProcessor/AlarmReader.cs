@@ -29,7 +29,7 @@ namespace Core.AlarmProcessor
         {
             _logger = logger;
             _piCM = piCM;
-            _throttler = new SemaphoreSlim(1,1);
+            _throttler = new SemaphoreSlim(2,5);
         }
 
         //Get Alarm String
